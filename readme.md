@@ -23,7 +23,12 @@ O SQLAlchemy é uma poderosa ferramenta para interação com bancos de dados rel
 A engine é o ponto de partida para qualquer operação com o SQLAlchemy. Ela é responsável por estabelecer a conexão com o banco de dados, gerenciar recursos, e executar as instruções SQL geradas pelo ORM ou escritas manualmente. A engine também encapsula detalhes sobre o dialeto do banco de dados, que é uma camada de abstração que permite ao SQLAlchemy gerar SQL compatível com diferentes bancos de dados.
 
 ### Conceito de Session no SQLAlchemy
+
 A session no SQLAlchemy representa uma sessão de comunicação com o banco de dados. Ela funciona como um "carrinho de compras" onde as operações de consulta e modificação de dados são armazenadas antes de serem definitivamente enviadas para o banco. Com isso, a session permite que múltiplas operações sejam agrupadas em uma transação única, garantindo que todas as operações sejam aplicadas de forma atômica, ou seja, todas as operações ocorrem ou nenhuma ocorre, o que é crucial para manter a integridade dos dados.
+
+### Conceitos de utlização assíncrona
+
+No SQLAlchemy, a versão assíncrona da engine e session permite que operações com o banco de dados sejam executadas de forma não bloqueante, o que é essencial em aplicações que precisam lidar com I/O de maneira eficiente, como em servidores web de alta concorrência.
 
 ## Pré-requisitos
 
@@ -76,6 +81,7 @@ Nos arquivos desse repositório também estão as configurações do de iniciali
 ├── test_driver.py
 └── src
     └── db.py
+    └── async_db.py
 ```
 
 #### Driver Síncrono - psycopg2
@@ -86,25 +92,40 @@ A engine é criada usando a função create_engine() do SQLAlchemy, onde você e
 
 Já a session é instanciada a partir de um sessionmaker, que por sua vez é configurado para usar a engine criada anteriormente.
 
-#### Uso do psycopg2
+#### Driver Assíncrono - asyncpg
 
-No código fornecido, o driver psycopg2 é utilizado para criar a engine, o que conecta o SQLAlchemy ao banco de dados PostgreSQL. Isso é feito através da string de conexão no formato `"postgresql+psycopg2://user:password@host:port/database"`. No exemplo:
+`src/async_db.py`
+
+Assim como a engine síncrona, a engine assíncrona (*async_engine*) é o ponto central para a conexão com o banco de dados, mas é projetada para operar no modo assíncrono. Isso permite que as operações sejam aguardadas (await), o que libera o loop de eventos para processar outras tarefas enquanto a operação de banco de dados é realizada.
+
+A engine assíncrona é criada utilizando a função create_async_engine() do SQLAlchemy. Neste exemplo, o driver utilizado é o asyncpg, que é um driver nativo assíncrono para o PostgreSQL.
+
+A session assíncrona (*AsyncSession*) funciona de maneira semelhante à versão síncrona, mas é projetada para suportar a execução assíncrona de operações no banco de dados. Isso significa que as operações de consulta e modificação de dados podem ser executadas de forma não bloqueante, utilizando await.
+
+Assim como na versão síncrona, a session é instanciada a partir de um sessionmaker, mas configurada para utilizar a engine assíncrona.
+
+#### Uso do asyncpg
+
+No código fornecido, o driver asyncpg é utilizado para criar a engine assíncrona, que conecta o SQLAlchemy ao banco de dados PostgreSQL de forma assíncrona. A string de conexão utilizada é no formato `"postgresql+asyncpg://user:password@host:port/database"`:
 
 ```python
-DB = "postgresql+psycopg2://admin:changethis@localhost:5432/sync-psycopg2"
-engine = create_engine(DB, echo=True)
+ASYNC_DB = "postgresql+asyncpg://admin:changethis@localhost:5432/async-asyncpg"
+async_engine = create_async_engine(ASYNC_DB, echo=True, future=True)
 ```
 
-Aqui, o psycopg2 é o driver especificado para se conectar ao PostgreSQL. A engine criada com essa configuração será usada para todas as interações subsequentes com o banco de dados, incluindo a criação de tabelas e a geração de sessões.
+Esse código cria uma engine assíncrona que será usada para todas as interações subsequentes com o banco de dados, incluindo a criação de tabelas e a geração de sessões.
 
-A partir da engine, uma session é gerada usando o sessionmaker.
+A partir da async_engine, uma session assíncrona é gerada usando o async_sessionmaker
 
 A partir da session criada é possível iniciar uma sessão para adicionar objetos ao banco de dados ou executar consultas, como demonstrado no código:
 
 ```python
-with Session() as session:
+async with get_session() as session:
     hero1 = Hero(name="spongebob")
     hero2 = Hero(name="sandy")
     session.add_all([hero1, hero2])
-    session.commit()
+    await session.commit()
+
 ```
+
+Aqui, a session é utilizada dentro de um contexto assíncrono (async with), garantindo que as operações de adição e commit sejam executadas de forma não bloqueante.
