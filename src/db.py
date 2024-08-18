@@ -13,7 +13,7 @@ from sqlalchemy import UUID, select
 
 table_name = "sync-psycopg2"
 
-print(f"Remenber to create table {table_name} first!!!!!!!!")
+print(f"Remember to create table {table_name} first!!!!!!!!")
 
 DB = f"postgresql+psycopg2://admin:changethis@localhost:5432/{table_name}"
 

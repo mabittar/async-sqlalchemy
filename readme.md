@@ -9,12 +9,10 @@ Este projeto é um estudo sobre a utilização de diferentes drivers para conect
 - [Configuração do Ambiente](#configuração-do-ambiente)
 - [Utilização](#utilização)
 - [Estrutura do Projeto](#estrutura-do-projeto)
-- [Contribuição](#contribuição)
-- [Licença](#licença)
 
 ## Visão Geral
 
-O objetivo deste projeto é explorar e comparar diferentes drivers disponíveis para SQLAlchemy ao se conectar com o banco de dados PostgreSQL. 
+O objetivo deste projeto é explorar e comparar diferentes drivers disponíveis para utilizados pelo SQLAlchemy para se conectar a um banco de dados PostgresSQL e formas diferentes de gerenciar a criação de tabelas e manipular objetos. 
 
 O SQLAlchemy é uma poderosa ferramenta para interação com bancos de dados relacionais em Python. Ele fornece uma abstração de alto nível para realizar operações no banco de dados, permitindo que desenvolvedores trabalhem com objetos Python (uma poderosa biblioteca ORM (Object-Relational Mapping)) em vez de escrever consultas SQL diretamente, facilitando o trabalho com bancos de dados relacionais em Python. Dois conceitos fundamentais para entender como o SQLAlchemy opera são a engine e a session.
 
@@ -82,6 +80,7 @@ Nos arquivos desse repositório também estão as configurações do de iniciali
 └── src
     └── db.py
     └── async_db.py
+    └── migrate_db.py
 ```
 
 #### Driver Síncrono - psycopg2
@@ -104,7 +103,7 @@ A session assíncrona (*AsyncSession*) funciona de maneira semelhante à versão
 
 Assim como na versão síncrona, a session é instanciada a partir de um sessionmaker, mas configurada para utilizar a engine assíncrona.
 
-#### Uso do asyncpg
+##### Uso do asyncpg
 
 No código fornecido, o driver asyncpg é utilizado para criar a engine assíncrona, que conecta o SQLAlchemy ao banco de dados PostgreSQL de forma assíncrona. A string de conexão utilizada é no formato `"postgresql+asyncpg://user:password@host:port/database"`:
 
@@ -129,3 +128,94 @@ async with get_session() as session:
 ```
 
 Aqui, a session é utilizada dentro de um contexto assíncrono (async with), garantindo que as operações de adição e commit sejam executadas de forma não bloqueante.
+
+
+#### Utilização do Async Alembic
+
+`src/migrate_db.py`
+
+O Alembic é uma ferramenta de migração de banco de dados projetada para trabalhar com o SQLAlchemy. Ele permite que você gerencie mudanças no esquema do banco de dados de forma organizada, utilizando scripts de migração. Em um ambiente assíncrono, o Alembic pode ser configurado para trabalhar com a engine e session assíncronas do SQLAlchemy, permitindo que as migrações sejam executadas de forma não bloqueante.
+
+O processo de migração com Alembic envolve a criação de scripts que descrevem as mudanças a serem aplicadas ao banco de dados, como a criação de tabelas, modificação de colunas, ou inserção de dados. Esses scripts podem ser gerados automaticamente com base nas definições dos modelos do SQLAlchemy, tornando a gestão do esquema do banco de dados mais simples e eficiente.
+
+O Alembic será utilizado para criar e atualizar tabelas, schemas e suas interligações / dependências.
+
+```shell
+alembic init -t async alembic
+```
+Inicializa o Alembic com um template assíncrono.
+
+Edite do arquivo `alembic/env.py` para configurar a engine assíncrona.
+
+```text
+from src.migrate_db import Base, MIGRATE_DB
+
+... 
+
+config = context.config
+config.set_main_option("sqlalchemy.url", MIGRATE_DB)
+
+...
+
+target_metadata = Base.metadata
+
+...
+```
+
+Uso do comando para gerar automaticamente um novo script de migração com base nas mudanças nos modelos: 
+
+```shell
+alembic revision --autogenerate -m "create heroes"
+
+```
+
+Aplicação da migração
+
+```shell
+alembic upgrade head
+```
+
+execute o script migrate_db.py para inserir novos dados na tabela criada.
+
+Para verificar o histórico de migrações utilize:
+
+```shell
+alembic history
+```
+
+Para desfazer as migrações utilize:
+
+```shell
+ alembic downgrade -1
+```
+
+ou utilize o identificador apontado no histórico
+
+```shell
+alembic downgrade 2bc75cfe65ae
+```
+
+##### Uso do alembic em ambientes produtivos
+
+O uso de Alembic para gerenciar migrações de banco de dados é uma prática recomendada para a maioria dos projetos, especialmente aqueles que exigem escalabilidade, consistência entre ambientes, e controle de versões. Manter e executar scripts SQL manualmente pode ser adequado em sistemas mais simples ou onde o controle total é necessário, mas requer muito mais cuidado para evitar erros e inconsistências. A automação, testes rigorosos, e uma documentação clara são essenciais, independentemente da abordagem escolhida.
+
+
+###### Vantagens
+
+- *Controle de Versões:* O Alembic permite rastrear todas as alterações no esquema do banco de dados através de migrações versionadas. Isso facilita a reverter, aplicar ou reverter alterações conforme necessário.
+
+- *Automação:* Com Alembic, muitas das operações, como criar novas tabelas, alterar colunas, ou adicionar índices, podem ser geradas automaticamente com base nas mudanças no código dos modelos do SQLAlchemy.
+
+- *Consistência:* Garantir que todos os ambientes (desenvolvimento, teste, produção) tenham o mesmo esquema de banco de dados é muito mais fácil com Alembic, uma vez que as migrações podem ser aplicadas de forma consistente em todos os ambientes.
+
+- *Histórico e Rastreabilidade:* As migrações são armazenadas como scripts e versionadas, o que permite auditar e entender como e quando o esquema do banco de dados mudou ao longo do tempo.
+
+- **Integração com CI/CD:* Alembic pode ser integrado em pipelines de CI/CD, automatizando a aplicação de migrações em ambientes de teste e produção, reduzindo o risco de erros manuais.
+
+###### Desvantagens
+
+- *Curva de Aprendizado:* Para desenvolvedores que não estão familiarizados com ferramentas de migração como o Alembic, pode haver uma curva de aprendizado significativa.
+
+- *Complexidade em Cenários de Migrações Conflitantes:* Em ambientes onde várias equipes ou desenvolvedores fazem alterações no banco de dados, pode haver conflitos de migração que precisam ser resolvidos.
+
+- **Dependência de Ferramentas:* O uso de Alembic introduz uma dependência adicional no projeto, o que pode ser um fator em ambientes onde simplicidade e controle total são priorizados.

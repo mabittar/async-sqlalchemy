@@ -17,15 +17,18 @@ from sqlalchemy import func
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy import UUID, select
 
-table_name = "async-asyncpg"
+table_name = "migrate"
 
-print(f"Remember to create table {table_name} first!!!!!!!!")
+print(f"use: alembic init -t async alembic")
+print(f"after edit alembic/env.py to reflect config")
+print(f"use alembic revision --autogenerate")
+print(f"then: alembic upgrade head")
 
-ASYNC_DB = f"postgresql+asyncpg://admin:changethis@localhost:5432/{table_name}"
+MIGRATE_DB = f"postgresql+asyncpg://admin:changethis@localhost:5432/{table_name}"
 
 
 async_engine = create_async_engine(
-    ASYNC_DB,
+    MIGRATE_DB,
     echo=True,
     future=True,
 )
@@ -72,21 +75,12 @@ class Hero(Base):
         return f"Hero(id={self.id!r}, name={self.name!r}"
 
 
-async def create_all():
-    print("Using sync psg driver to create tables!")
-    async with get_conn() as connection:
-        await connection.run_sync(Base.metadata.create_all)
-
-
-async def drop_all():
-    print("Use it only for tests propouses!")
-    async with get_conn() as connection:
-        await connection.run_sync(Base.metadata.drop_all)
+def create_all():
+    print("use alembic migrations to create tables!")
 
 
 async def main():
-    print("Creating tables")
-    await create_all()
+    create_all()
     async with get_session() as session:
         hero1 = Hero(name="spongebob")
         hero2 = Hero(name="sandy")
@@ -96,8 +90,6 @@ async def main():
     async with get_session() as session:
         for hero in await session.scalars(select(Hero)):
             print(hero)
-    # print("Dropping tables")
-    # await drop_all()
 
 
 if __name__ == "__main__":
