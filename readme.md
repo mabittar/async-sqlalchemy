@@ -219,3 +219,50 @@ O uso de Alembic para gerenciar migrações de banco de dados é uma prática re
 - *Complexidade em Cenários de Migrações Conflitantes:* Em ambientes onde várias equipes ou desenvolvedores fazem alterações no banco de dados, pode haver conflitos de migração que precisam ser resolvidos.
 
 - **Dependência de Ferramentas:* O uso de Alembic introduz uma dependência adicional no projeto, o que pode ser um fator em ambientes onde simplicidade e controle total são priorizados.
+
+
+#### Utilização do SQLAlchemy em uma aplicação com o AsyncSession
+
+##### session.get()
+
+Uso: Este método é ideal quando você quer buscar uma entrada específica da tabela pelo valor de sua chave primária.
+Quando usar: Utilize get quando você souber o valor da chave primária de um registro e quiser recuperá-lo diretamente.
+
+```python
+hero = await db.get(HeroModel, hero_id)
+```
+
+##### select(Model).where()
+
+Uso: Este método é usado para construir consultas SQL mais flexíveis com condições específicas (WHERE).
+Quando usar: Utilize select().where() quando precisar buscar registros com base em uma ou mais condições.
+
+
+```python
+stmt = select(HeroModel).where(HeroModel.name == "spongebob")
+result = await db.execute(stmt)
+hero = result.scalar_one_or_none()
+``` 
+
+##### scalar()
+
+Uso: Executa a consulta e retorna o primeiro elemento do primeiro resultado da query ou None se não houver resultados.
+Quando usar: Use scalar quando espera apenas um único resultado da consulta.
+
+```python
+stmt = select(HeroModel).where(HeroModel.name == "spongebob")
+hero = await db.scalar(stmt)
+```
+##### scalars()
+
+Uso: Retorna um gerador sobre os valores da coluna selecionada, ou seja, itera sobre todas as entradas de uma coluna específica ou de todo o modelo.
+Quando usar: Use scalars para buscar múltiplos registros quando a consulta pode retornar vários resultados.
+
+```python
+stmt = select(HeroModel).where(HeroModel.app_src == "async_app")
+result = await db.execute(stmt)
+heroes = result.scalars().all()
+```
+
+
+

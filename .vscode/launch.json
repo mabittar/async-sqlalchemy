@@ -19,7 +19,7 @@
       "envFile": "${workspaceFolder}/.env",
       "request": "launch",
       "module": "uvicorn",
-      "args": ["src.main:app", "--reload"],
+      "args": ["async_app.main:app", "--reload"],
       "jinja": true
     }
   ]
