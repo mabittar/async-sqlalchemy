@@ -46,8 +46,8 @@ Antes de começar, certifique-se de ter os seguintes itens instalados:
 Clone este repositório para a sua máquina local:
 
 ```bash
-git clone https://github.com/seu-usuario/seu-repositorio.git
-cd seu-repositorio
+git clone https://github.com/mabittar/async-sqlalchemy
+cd async-sqlalchemy
 ```
 
 ### 2. Configurar o ambiente
@@ -55,8 +55,18 @@ cd seu-repositorio
 Um arquivo docker-compose.yml está incluído no projeto para facilitar a configuração de um banco de dados PostgreSQL localmente. Para iniciar o banco de dados, execute:
 
 ```bash
+docker-compose build
 docker-compose up -d
 ```
+
+Caso queira executar localmente as diferentes aplicações, remova ou comente as linhas do arquivo `docker-compose.yml` para evitar que as mesmas sejam executadas com os comandos acima.
+
+Caso queira encerrar ou mesmo paralizar a execução das aplicações utilize:
+
+```bash
+docker-compose down
+```
+
 
 ### 3. Instale as dependencias
 
