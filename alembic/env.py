@@ -7,12 +7,14 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from alembic import context
 
-from src.migrate_db import Base, MIGRATE_DB
+from app.shared.models import Base
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
-config.set_main_option("sqlalchemy.url", MIGRATE_DB)
+config.set_main_option(
+    "sqlalchemy.url", "postgresql+asyncpg://admin:changethis@localhost:5432/async-app"
+)
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.

@@ -8,11 +8,14 @@ Este projeto é um estudo sobre a utilização de diferentes drivers para conect
 - [Pré-requisitos](#pré-requisitos)
 - [Configuração do Ambiente](#configuração-do-ambiente)
 - [Utilização](#utilização)
-- [Estrutura do Projeto](#estrutura-do-projeto)
+- [Testes de Conexão](#teste-de-conexao)
+- [Utilização diferentes Drivers com FastAPI](#drivers)
+- [Testes de Carga](#testes-de-carga)
+- [Conclusão](#conclusão)
 
 ## Visão Geral
 
-O objetivo deste projeto é explorar e comparar diferentes drivers disponíveis para utilizados pelo SQLAlchemy para se conectar a um banco de dados PostgresSQL e formas diferentes de gerenciar a criação de tabelas e manipular objetos. 
+O objetivo deste projeto é explorar e comparar diferentes drivers disponíveis para utilizados pelo SQLAlchemy para se conectar a um banco de dados PostgresSQL e formas diferentes de gerenciar a criação de tabelas e manipular objetos.
 
 O SQLAlchemy é uma poderosa ferramenta para interação com bancos de dados relacionais em Python. Ele fornece uma abstração de alto nível para realizar operações no banco de dados, permitindo que desenvolvedores trabalhem com objetos Python (uma poderosa biblioteca ORM (Object-Relational Mapping)) em vez de escrever consultas SQL diretamente, facilitando o trabalho com bancos de dados relacionais em Python. Dois conceitos fundamentais para entender como o SQLAlchemy opera são a engine e a session.
 
@@ -70,7 +73,7 @@ pip install -r requirements.txt
 
 Nos arquivos desse repositório também estão as configurações do de inicialização do debugger do VSCode. Selecione o arquivo de teste e execute o debug selecionando `Inicializador de Módulo`
 
-### Estrtura do Projeto
+### Teste de Conexão
 
 ```text
 ├── README.md
@@ -95,11 +98,11 @@ Já a session é instanciada a partir de um sessionmaker, que por sua vez é con
 
 `src/async_db.py`
 
-Assim como a engine síncrona, a engine assíncrona (*async_engine*) é o ponto central para a conexão com o banco de dados, mas é projetada para operar no modo assíncrono. Isso permite que as operações sejam aguardadas (await), o que libera o loop de eventos para processar outras tarefas enquanto a operação de banco de dados é realizada.
+Assim como a engine síncrona, a engine assíncrona (_async_engine_) é o ponto central para a conexão com o banco de dados, mas é projetada para operar no modo assíncrono. Isso permite que as operações sejam aguardadas (await), o que libera o loop de eventos para processar outras tarefas enquanto a operação de banco de dados é realizada.
 
 A engine assíncrona é criada utilizando a função create_async_engine() do SQLAlchemy. Neste exemplo, o driver utilizado é o asyncpg, que é um driver nativo assíncrono para o PostgreSQL.
 
-A session assíncrona (*AsyncSession*) funciona de maneira semelhante à versão síncrona, mas é projetada para suportar a execução assíncrona de operações no banco de dados. Isso significa que as operações de consulta e modificação de dados podem ser executadas de forma não bloqueante, utilizando await.
+A session assíncrona (_AsyncSession_) funciona de maneira semelhante à versão síncrona, mas é projetada para suportar a execução assíncrona de operações no banco de dados. Isso significa que as operações de consulta e modificação de dados podem ser executadas de forma não bloqueante, utilizando await.
 
 Assim como na versão síncrona, a session é instanciada a partir de um sessionmaker, mas configurada para utilizar a engine assíncrona.
 
@@ -129,7 +132,6 @@ async with get_session() as session:
 
 Aqui, a session é utilizada dentro de um contexto assíncrono (async with), garantindo que as operações de adição e commit sejam executadas de forma não bloqueante.
 
-
 #### Utilização do Async Alembic
 
 `src/migrate_db.py`
@@ -143,6 +145,7 @@ O Alembic será utilizado para criar e atualizar tabelas, schemas e suas interli
 ```shell
 alembic init -t async alembic
 ```
+
 Inicializa o Alembic com um template assíncrono.
 
 Edite do arquivo `alembic/env.py` para configurar a engine assíncrona.
@@ -150,7 +153,7 @@ Edite do arquivo `alembic/env.py` para configurar a engine assíncrona.
 ```text
 from src.migrate_db import Base, MIGRATE_DB
 
-... 
+...
 
 config = context.config
 config.set_main_option("sqlalchemy.url", MIGRATE_DB)
@@ -162,7 +165,7 @@ target_metadata = Base.metadata
 ...
 ```
 
-Uso do comando para gerar automaticamente um novo script de migração com base nas mudanças nos modelos: 
+Uso do comando para gerar automaticamente um novo script de migração com base nas mudanças nos modelos:
 
 ```shell
 alembic revision --autogenerate -m "create heroes"
@@ -199,27 +202,25 @@ alembic downgrade 2bc75cfe65ae
 
 O uso de Alembic para gerenciar migrações de banco de dados é uma prática recomendada para a maioria dos projetos, especialmente aqueles que exigem escalabilidade, consistência entre ambientes, e controle de versões. Manter e executar scripts SQL manualmente pode ser adequado em sistemas mais simples ou onde o controle total é necessário, mas requer muito mais cuidado para evitar erros e inconsistências. A automação, testes rigorosos, e uma documentação clara são essenciais, independentemente da abordagem escolhida.
 
-
 ###### Vantagens
 
-- *Controle de Versões:* O Alembic permite rastrear todas as alterações no esquema do banco de dados através de migrações versionadas. Isso facilita a reverter, aplicar ou reverter alterações conforme necessário.
+- _Controle de Versões:_ O Alembic permite rastrear todas as alterações no esquema do banco de dados através de migrações versionadas. Isso facilita a reverter, aplicar ou reverter alterações conforme necessário.
 
-- *Automação:* Com Alembic, muitas das operações, como criar novas tabelas, alterar colunas, ou adicionar índices, podem ser geradas automaticamente com base nas mudanças no código dos modelos do SQLAlchemy.
+- _Automação:_ Com Alembic, muitas das operações, como criar novas tabelas, alterar colunas, ou adicionar índices, podem ser geradas automaticamente com base nas mudanças no código dos modelos do SQLAlchemy.
 
-- *Consistência:* Garantir que todos os ambientes (desenvolvimento, teste, produção) tenham o mesmo esquema de banco de dados é muito mais fácil com Alembic, uma vez que as migrações podem ser aplicadas de forma consistente em todos os ambientes.
+- _Consistência:_ Garantir que todos os ambientes (desenvolvimento, teste, produção) tenham o mesmo esquema de banco de dados é muito mais fácil com Alembic, uma vez que as migrações podem ser aplicadas de forma consistente em todos os ambientes.
 
-- *Histórico e Rastreabilidade:* As migrações são armazenadas como scripts e versionadas, o que permite auditar e entender como e quando o esquema do banco de dados mudou ao longo do tempo.
+- _Histórico e Rastreabilidade:_ As migrações são armazenadas como scripts e versionadas, o que permite auditar e entender como e quando o esquema do banco de dados mudou ao longo do tempo.
 
-- **Integração com CI/CD:* Alembic pode ser integrado em pipelines de CI/CD, automatizando a aplicação de migrações em ambientes de teste e produção, reduzindo o risco de erros manuais.
+- \*_Integração com CI/CD:_ Alembic pode ser integrado em pipelines de CI/CD, automatizando a aplicação de migrações em ambientes de teste e produção, reduzindo o risco de erros manuais.
 
 ###### Desvantagens
 
-- *Curva de Aprendizado:* Para desenvolvedores que não estão familiarizados com ferramentas de migração como o Alembic, pode haver uma curva de aprendizado significativa.
+- _Curva de Aprendizado:_ Para desenvolvedores que não estão familiarizados com ferramentas de migração como o Alembic, pode haver uma curva de aprendizado significativa.
 
-- *Complexidade em Cenários de Migrações Conflitantes:* Em ambientes onde várias equipes ou desenvolvedores fazem alterações no banco de dados, pode haver conflitos de migração que precisam ser resolvidos.
+- _Complexidade em Cenários de Migrações Conflitantes:_ Em ambientes onde várias equipes ou desenvolvedores fazem alterações no banco de dados, pode haver conflitos de migração que precisam ser resolvidos.
 
-- **Dependência de Ferramentas:* O uso de Alembic introduz uma dependência adicional no projeto, o que pode ser um fator em ambientes onde simplicidade e controle total são priorizados.
-
+- \*_Dependência de Ferramentas:_ O uso de Alembic introduz uma dependência adicional no projeto, o que pode ser um fator em ambientes onde simplicidade e controle total são priorizados.
 
 #### Utilização do SQLAlchemy em uma aplicação com o AsyncSession
 
@@ -237,12 +238,11 @@ hero = await db.get(HeroModel, hero_id)
 Uso: Este método é usado para construir consultas SQL mais flexíveis com condições específicas (WHERE).
 Quando usar: Utilize select().where() quando precisar buscar registros com base em uma ou mais condições.
 
-
 ```python
 stmt = select(HeroModel).where(HeroModel.name == "spongebob")
 result = await db.execute(stmt)
 hero = result.scalar_one_or_none()
-``` 
+```
 
 ##### scalar()
 
@@ -253,6 +253,7 @@ Quando usar: Use scalar quando espera apenas um único resultado da consulta.
 stmt = select(HeroModel).where(HeroModel.name == "spongebob")
 hero = await db.scalar(stmt)
 ```
+
 ##### scalars()
 
 Uso: Retorna um gerador sobre os valores da coluna selecionada, ou seja, itera sobre todas as entradas de uma coluna específica ou de todo o modelo.
@@ -264,5 +265,124 @@ result = await db.execute(stmt)
 heroes = result.scalars().all()
 ```
 
+### Utilização de Diferentes Drivers
+
+```text
+├── README.md
+├── docker-compose.yml
+├── Dockerfile.yml
+├── Dockerfile-psycopg2.yml
+├── Dockerfile-psycopg3.yml
+├── requirements.txt
+├── locustfile.py
+├── toys.sql
+└── app
+    └── shared
+        └── async_database.py
+        └── database.py
+        └── models.py
+        └── schema.py
+    └── application.py
+    └── async_application.py
+    └── async_router.py
+    └── asyncpg_main.py
+    └── psycopg2_main.py
+    └── psycopg3_main.py
+    └── router.py
+    └── settings.py
+```
 
 
+Já que diferentes formas de realizar a conexão com o banco Postgres foi implementada anteriormente, agora será utilizadas as diferentes técnicas e iremos comparar os resultados.
+O cenário de teste envolve criar uma banco de dados com tabelas que possuam relacionamento many-to-many, pois a tendência é aumentar rapidamente com o tempo de utilização da Aplicação.
+
+A biblioteca `Locust` foi utilizada para implementar os testes de carga.
+
+Mas antes vamos aos detalhes.
+
+#### Shared
+
+Neste diretório estão arquivos que são compartilhados entre as as aplicação, como o modelo do banco de dados e o shema de input dos dados.
+
+##### Modelo do banco de Dados.
+
+`app/shared/models.py`
+Este projeto utiliza SQLAlchemy para a modelagem do banco de dados, adotando uma estrutura relacional que inclui entidades e relacionamentos.
+
+A classe Base é uma classe base declarativa que define colunas comuns a todas as tabelas do projeto, como created_at e updated_on, que registram automaticamente a data de criação e a última atualização dos registros, respectivamente.
+
+```python
+class Base(DeclarativeBase):
+    created_at: Mapped[datetime] = mapped_column(server_default=func.now())
+    updated_on: Mapped[datetime] = mapped_column(
+        DateTime, server_default=func.now(), onupdate=func.now()
+    )
+
+```
+
+Tabela de Associação: *user_toy_association*
+A tabela user_toy_association é uma tabela de associação para implementar um relacionamento muitos-para-muitos entre usuários (UserModel) e brinquedos (ToyModel). Cada registro na tabela associa um usuário a um brinquedo específico.
+
+Modelo *ToyModel*
+A tabela toys armazena informações sobre os brinquedos. Cada brinquedo tem um identificador único (id) e um nome (name). A coluna id é do tipo UUID e é gerada automaticamente para garantir unicidade.
+
+Modelo *UserModel*
+A tabela users armazena informações sobre os usuários. Cada usuário possui um identificador único (id) e um nome (name). A relação muitos-para-muitos entre usuários e brinquedos é gerida pela tabela de associação user_toy_association. A propriedade toys define essa relação, utilizando relationship com o parâmetro secondary, que referencia a tabela de associação.
+
+Esta estrutura permite gerenciar eficientemente as entidades e seus relacionamentos, mantendo a base de dados bem estruturada e fácil de expandir conforme as necessidades do projeto evoluem.
+
+##### Schema
+
+`app/shared/schema.py`
+Utilizado o `Pydantic` para validação do input e composição da respota esperada para cada endpoint.
+
+##### Database
+
+`app/shared/async_database.py` e `app/shared/database.py`
+É o arquivo responsável por criar e gerenciar a sessão do banco de dados, assim como a injeção de dependência utilizada pelo FastAPI. Foi necessário criar dois arquivos separados, pois um utiliza a sessão assíncrona e outro síncrona.
+
+#### async_application e application
+
+`app/async_application.py` e `app/application.py`
+Ambas as abordagens compartilham uma estrutura semelhante e são projetadas para serem facilmente intercambiáveis, dependendo das necessidades do projeto. A escolha entre uma aplicação assíncrona e uma síncrona deve ser baseada nos requisitos de desempenho e escalabilidade da aplicação. 
+São os scripts responsáveis por criar a instância do FastAPI, utilizando os recursos do script database, conforme necessidade. Esse script também é reponsável por injetar as respectivas rotas (async_router e router), assim como a demais configurações.
+
+
+#### Assíncrona
+A aplicação assíncrona utiliza `asyncsessionmanager` para gerenciar a conexão com o banco de dados de forma assíncrona, garantindo que todas as operações de I/O (Input/Output) sejam não-bloqueantes. Esta abordagem é ideal para cenários onde a aplicação lida com um grande número de requisições simultâneas, pois permite melhor escalabilidade e performance.
+
+
+
+#### Síncrona
+A aplicação síncrona utiliza `sessionmanager` para gerenciar a conexão com o banco de dados de forma síncrona. Esta abordagem é adequada para aplicações mais simples ou onde a latência e o volume de requisições simultâneas não são críticos. A simplicidade de uma abordagem síncrona pode ser mais fácil de entender e depurar, especialmente em ambientes de desenvolvimento ou em sistemas de baixa carga.
+
+
+#### main.py
+
+Os arquivos `app/asyncpg_main.py`, `app/psycopg2_main.py`e `app/psycopg3_main.py` são responsáveis por iniciar as diferentes aplicações, cada qual utilizando drivers ou dialetos diferentes de conexão com o Postgres. Esses arquivos também são utilizados para indicar ao respectivo Dockerfile, qual aplicação deve ser iniciado.
+
+
+## Testes de Carga
+
+Para avaliar o desempenho das duas abordagens de acesso ao banco de dados (assíncrona e síncrona), utilizei a ferramenta Locust, que é uma estrutura de teste de carga open-source em Python. O teste simulou várias requisições para os endpoints de criação e leitura de users e toys.
+
+### Resultados Obtidos
+Os resultados dos testes de carga foram coletados para comparar as abordagens síncrona e assíncrona. Abaixo estão as imagens dos resultados dos testes utilizando os drivers psycopg2 (síncrono) e asyncpg (assíncrono).
+
+Resultados com psycopg2 (Síncrono):
+psycopg (apesar da ausência da numeração essa é a biblioteca mais atual)
+![psycopg](assets/psycopg.png)
+
+Resultados com asyncpg (Assíncrono):
+Asyncpg
+![alt text](assets/asyncpg.png)
+
+
+## Conclusão
+Os testes de carga indicaram diferenças significativas no comportamento de desempenho entre as abordagens síncronas e assíncronas.
+
+Abordagem Síncrona (psycopg2): O tempo de resposta foi consistente em níveis mais baixos de carga, mas aumentou significativamente à medida que o número de requisições cresceu. Isso pode ser atribuído ao bloqueio nas operações de I/O, que afeta a escalabilidade em cenários de alta concorrência.
+
+Abordagem Assíncrona (asyncpg): Demonstrou uma melhor capacidade de lidar com um grande número de requisições simultâneas, mantendo os tempos de resposta mais baixos em comparação com a abordagem síncrona. Essa vantagem é decorrente da natureza não bloqueante das operações assíncronas.
+
+Portanto, a escolha entre essas abordagens depende do caso de uso específico. Para aplicações com alta concorrência e onde o tempo de resposta é crítico, a abordagem assíncrona com asyncpg se mostrou superior. No entanto, para cenários com menos concorrência ou onde a simplicidade da implementação é priorizada, a abordagem síncrona com psycopg2 pode ser suficiente.
