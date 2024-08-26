@@ -63,10 +63,8 @@ async def create_hero(session: SessionDep, hero_in: HeroSchema) -> HeroResponse:
     db_hero = await HeroModel.filterByName(session, hero_in.name)
     if db_hero:
         return HeroResponse(name=db_hero.name, source=db_hero.app_src, id=db_hero.id)
-    hero = HeroModel(name=hero_in.name, app_src=hero_in.source)
-    result = session.add(hero)
-    await session.commit()
-    return TypeAdapter(HeroResponse).validate_python(result)
+    result = await HeroModel.create(session, **hero_in.model_dump())
+    return HeroResponse.model_validate(result)
 
 
 @router.get("/heroes", status_code=HTTPStatus.OK)

@@ -45,7 +45,7 @@ class Base(DeclarativeBase):
 class Hero(Base):
     __tablename__ = "heroes"
 
-    id: Mapped[uuid4] = mapped_column(
+    id: Mapped[UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid4
     )
     name: Mapped[str] = mapped_column(String(30))
@@ -89,20 +89,20 @@ class App:
     def __init__(
         self,
         lifespan: Callable,
-        router: APIRouter | None,
+        app_router: APIRouter | None,
         settings: AppSettings,
     ):
         self.__app = FastAPI(lifespan=lifespan, **settings.set_app_attributes)
-        self.__add_routes(router=router)
+        self.__add_routes(app_router=app_router)
         self.__app.add_middleware(
             SQLAlchemyMiddleware,
             commit_on_exit=True,
             custom_engine=custom_engine,
         )
 
-    def __add_routes(self, router: APIRouter):
-        if router:
-            self.__app.include_router(router=router)
+    def __add_routes(self, app_router: APIRouter | None):
+        if app_router:
+            self.__app.include_router(router=app_router)
 
     def __call__(self) -> FastAPI:
         return self.__app

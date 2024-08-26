@@ -1,3 +1,4 @@
+from uuid import UUID
 from pydantic import BaseModel, Field
 
 
@@ -7,7 +8,7 @@ class HeroSchema(BaseModel):
 
 
 class HeroResponse(HeroSchema):
-    id: str
+    id: UUID
 
     class Config:
-        orm_mode = True
+        from_attributes = True

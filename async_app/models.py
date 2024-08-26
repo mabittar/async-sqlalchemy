@@ -5,7 +5,7 @@ from sqlalchemy.orm import (
     Mapped,
     mapped_column,
 )
-from sqlalchemy import func, select
+from sqlalchemy import func, insert, select
 from sqlalchemy.exc import IntegrityError, NoResultFound
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Mapped, mapped_column, class_mapper
@@ -41,8 +41,8 @@ class HeroModel(Base):
     async def create(cls, db: AsyncSession, id=None, **kwargs):
         if not id:
             id = uuid.uuid4().hex
-
-        transaction = cls(id=id, **kwargs)
+        app_src = kwargs["source"]
+        transaction = cls(id=id, name=kwargs["name"], app_src=app_src)
         db.add(transaction)
         await db.commit()
         await db.refresh(transaction)
