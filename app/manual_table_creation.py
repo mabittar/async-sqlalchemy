@@ -2,16 +2,16 @@ import asyncio
 import logging
 
 from sqlalchemy.ext.asyncio import create_async_engine
-
-from .async_db import ASYNC_DB, Base
+from app.shared.models import Base
 
 logger = logging.getLogger()
+db_url = "postgresql+asyncpg://admin:changethis@localhost:5432/load"
 
 
 async def migrate_tables() -> None:
     logger.info("Starting to migrate")
 
-    engine = create_async_engine(ASYNC_DB)
+    engine = create_async_engine(db_url)
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 

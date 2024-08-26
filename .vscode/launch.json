@@ -14,12 +14,30 @@
       "env": { "PYTHONPATH": "${cwd}" }
     },
     {
-      "name": "FastAPI",
+      "name": "asyncpg-FastAPI",
       "type": "debugpy",
       "envFile": "${workspaceFolder}/.env",
       "request": "launch",
       "module": "uvicorn",
-      "args": ["async_app.main:app", "--reload"],
+      "args": ["app.asyncpg_main:app", "--reload"],
+      "jinja": true
+    },
+    {
+      "name": "psycopg2-FastAPI",
+      "type": "debugpy",
+      "envFile": "${workspaceFolder}/.env",
+      "request": "launch",
+      "module": "uvicorn",
+      "args": ["app.psycopg2_main:app", "--reload"],
+      "jinja": true
+    },
+    {
+      "name": "psycopg-FastAPI",
+      "type": "debugpy",
+      "envFile": "${workspaceFolder}/.env",
+      "request": "launch",
+      "module": "uvicorn",
+      "args": ["app.psycopg3_main:app", "--port", "8004", "--reload"],
       "jinja": true
     }
   ]

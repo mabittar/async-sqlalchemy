@@ -1,0 +1,91 @@
+# temp stage
+FROM python:3.10-slim-buster AS builder
+
+# Ajuste do comportamento do Python
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+WORKDIR /app
+
+# Instalando dependencias
+RUN apt-get update && \
+    apt-get install gcc libpq-dev postgresql-client -y && \
+    apt-get autoremove --purge -y && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Preparando o ambiente
+# COPY requirements-base.txt /app
+COPY requirements.txt /app
+
+# Instale as dependências do aplicativo
+RUN python -m pip install --upgrade pip
+RUN python -m pip install --upgrade setuptools wheel
+RUN pip wheel --no-cache-dir --no-deps --wheel-dir /app/wheels -r requirements.txt
+
+# final stage
+FROM python:3.10-slim-buster
+EXPOSE 8000
+WORKDIR /app
+
+# define variáveis de ambiente
+# ARG build-time variables, assist to assist building a Docker
+# ENV variables to store values, such app settings
+ARG IS_DEBUG=false
+ARG ECHO_SQL=false
+ARG SERVER_PORT
+ARG APP_ENV
+ARG APP_VERSION
+ARG DOCS_URL
+ARG OPENAPI_URL
+ARG REDOC_URL
+ARG SERVER_HOST
+ARG SERVER_PORT
+ARG SERVER_WORKERS
+ARG SERVER_WORKERS
+ARG SERVER_WORKERS
+ARG SERVER_WORKERS
+ARG SERVER_WORKERS
+ARG SCHEME
+ARG POSTGRES_POOL_SIZE
+ARG DB
+
+ENV PYTHONPATH=/app
+
+ENV APP_ENV=$APP_ENV
+ENV APP_VERSION=$APP_VERSION
+ENV IS_DEBUG=$IS_DEBUG
+ENV DOCS_URL=$DOCS_URL
+ENV OPENAPI_URL=$OPENAPI_URL
+ENV REDOC_URL=$REDOC_URL
+
+ENV SERVER_HOST=$SERVER_HOST
+ENV SERVER_PORT=$SERVER_PORT
+ENV SERVER_WORKERS=$SERVER_WORKERS
+
+ENV ECHO_SQL=$ECHO_SQL
+ENV POSTGRES_SCHEME="postgresql+${SCHEME}}"
+ENV DB=$DB
+ENV POSTGRES_POOL_SIZE=$POSTGRES_POOL_SIZE
+
+
+RUN echo ${POSTGRES_SCHEME}
+
+ENV USER=appuser
+
+COPY --from=builder /app/wheels /wheels
+COPY --from=builder /app/requirements.txt /app
+
+RUN pip install --no-cache /wheels/*
+
+COPY app /app/src/
+
+# Crie um usuário não privilegiado e defina-o para executar a app
+RUN useradd -ms /bin/bash $USER
+RUN chown -R $USER /app
+USER $USER
+
+EXPOSE $SERVER_PORT
+
+# Comando para executar a aplicação com o Uvicorn
+CMD ["uvicorn", "src.psycopg2_main:app", "--proxy-headers", "--host", "0.0.0.0", "--port", "8000", "--workers", "4", "--forwarded-allow-ips", "*" ]
